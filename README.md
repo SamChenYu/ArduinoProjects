@@ -1,6 +1,6 @@
 # ArduinoPhone
-Small Arduino Project That Plays Sound From A Speaker
-Each specific button corresponds to a stored audio file.  
+Small Arduino Project That Plays Sound From A Speaker  
+Each specific button corresponds to a stored audio file.    
 Certain combination of buttons also plays a different audio file
 
 # Final Product / Internal Parts
