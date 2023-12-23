@@ -5,6 +5,10 @@ Certain combination of buttons also plays a different audio file
 
 
 Final Product
+
+<img src="https://github.com/SamChenYu/ArduinoPhone/assets/150127006/dc64857d-32c6-4b3d-80a2-cf388adbdf31" width="300" height="200" />
+
+
 ![WhatsApp Image 2023-12-23 at 12 01 39 AM](https://github.com/SamChenYu/ArduinoPhone/assets/150127006/dc64857d-32c6-4b3d-80a2-cf388adbdf31)
 
 
