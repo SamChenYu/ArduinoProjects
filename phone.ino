@@ -2,7 +2,7 @@
 #include <SoftwareSerial.h>
 
 #define button1 4   
-#define button2 5 // issue
+#define button2 5
 #define button3 6
 #define button4 7
 #define button5 8
@@ -18,6 +18,7 @@ int input;
 unsigned long len = 0;
 uint8_t i = 0;
 
+// single button codes values
 const int audrey = 1;   // uint8_t i = 1;
 const int darrel = 2; // 2
 const int dylan = 4;  // 3
@@ -30,7 +31,7 @@ const int maxx = 256; // 9
 const int sam = 512;    //11
 
 
-
+// two button codes values
 const int duckSquad = 1+2;// 10
 const int amos = 2+4; // 12
 const int eanhuncle = 4+8; //13 
@@ -39,7 +40,7 @@ const int kurt = 16+32 ; // 15
 const int wangan = 32+64; // 16
 const int aomvara = 64+128; // 17
 const int panties = 128 + 256; //18
-// const int junray = 256 + 512;
+const int junray = 256 + 512;
 
 void setup() {
 
@@ -63,19 +64,27 @@ void setup() {
 
 void loop(){
 
-  
+  // each button is assigned a value
+  // that's how we can identify individual buttons
+  // as well as if two buttons are pressed
   len = 0;
+
+
+  // check for input
   int input1 = !digitalRead(button1)*1 + !digitalRead(button2)*2 + !digitalRead(button3)*4 + !digitalRead(button4)*8 + !digitalRead(button5)*16
    + !digitalRead(button6)*32 + !digitalRead(button7)*64 + !digitalRead(button8)*128 + !digitalRead(button9)*256 + !digitalRead(button10)*512;
   
   if(input1 != 0) {
       delay(500);
+      // check for input again
       int input2 = !digitalRead(button1)*1 + !digitalRead(button2)*2 + !digitalRead(button3)*4 + !digitalRead(button4)*8 + !digitalRead(button5)*16
       + !digitalRead(button6)*32 + !digitalRead(button7)*64 + !digitalRead(button8)*128 + !digitalRead(button9)*256 + !digitalRead(button10)*512;
       
       if(input1 != input2) {
           input = input1 + input2;
       } else { input = input1; }
+
+
   } else { input = input1; }
   
 
@@ -171,12 +180,10 @@ void loop(){
       i = 18;
       len = 11000;
       break;
-   /*
-    * case(junray):
-    *   i = 19;
-    *   len = (insert length of mp3 file in miliseconds here);
-    *   break;
-    */
+    case(junray):
+    i = 19;
+    len = (insert length of mp3 file in miliseconds here);
+    break;
   
   }
   mp3.begin();
