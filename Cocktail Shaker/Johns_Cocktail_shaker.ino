@@ -9,17 +9,25 @@ const int redLedPin = 4;     // Pin connected to Red LED
 const int yellowLedPin = 8;  // Pin connected to Yellow LED
 const int greenLedPin = 12;  // Pin connected to Green LED
 
+int playing = 0;
+
 unsigned long vibrationTime = 0;
 unsigned long elapsedTime = 0;
 unsigned long interruptTimeStart = 10000;
 unsigned long lastVibrationDetected = 0;
 unsigned long ignoreNoVibrationUntil = 0;
 
+int tracks[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18};
+int interruptTracks[] = {19, 20, 21, 22};
+
 bool musicPlaying = false;
 bool interruptPlaying = false;
 bool shouldInterrupt = false;
 bool yellowLedOn = false;
 bool greenLedOn = false;
+
+bool finishedShakingPeriod = false;
+unsigned long finishedShakingTime = 0;
 
 const unsigned long ignorePeriod = 1000;  // Ignore "no vibration" for 500 ms
 
@@ -43,8 +51,8 @@ void setup() {
 
   Serial.println("DFPlayer Mini initialized successfully!");
   
-  myDFPlayer.volume(25);    // Set volume level (0-30)
-  myDFPlayer.EQ(DFPLAYER_EQ_POP);
+  myDFPlayer.volume(20);    // Set volume level (0-30)
+  myDFPlayer.EQ(DFPLAYER_EQ_NORMAL);
   ignoreNoVibrationUntil = millis() + 9999999999;
 }
 
@@ -52,6 +60,19 @@ void loop() {
   bool vibrationDetected = digitalRead(vibrationPin); // Read the vibration sensor
   
   unsigned long currentTime = millis();
+
+  if(finishedShakingPeriod) {
+    digitalWrite(greenLedPin, HIGH);
+    if(currentTime - finishedShakingTime >= 10000) {
+      finishedShakingPeriod = false;
+    }
+
+    return;
+  }
+
+
+
+
 
   if (vibrationDetected) {
     lastVibrationDetected = currentTime;  // Update last vibration time
@@ -63,6 +84,9 @@ void loop() {
     Serial.println("No Vibration detected.");
     handleNoVibration();
   }
+
+      Serial.println("playing track ");
+      Serial.println(playing);
 
 }
 
@@ -91,6 +115,8 @@ void handleVibrationDetected() {
   }
 
   if (elapsedTime >= 40000) {
+    finishedShakingPeriod = true;
+    finishedShakingTime = millis();
     resetSystem();
   }
 }
@@ -110,7 +136,8 @@ void startSequence() {
   Serial.println("Vibration detected! Starting sequence...");
 
   digitalWrite(redLedPin, HIGH); // Turn on the red LED
-  myDFPlayer.play(random(0, 19)); // Start playing the track
+   playing = tracks[random(0,19)];
+  myDFPlayer.play(playing); // Start playing the track
   musicPlaying = true;
   yellowLedOn = false; // Reset Yellow LED flag
   greenLedOn = false;  // Reset Green LED flag
@@ -120,7 +147,8 @@ void handleInterruptTrack() {
   if (shouldInterrupt) {
     myDFPlayer.stop();
     musicPlaying = false;
-    myDFPlayer.play(random(19,22));
+    playing = interruptTracks[random(0,3)];
+    myDFPlayer.play(playing);
     shouldInterrupt = false;
     elapsedTime = 0;
     interruptTimeStart = millis();
