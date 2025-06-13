@@ -7,13 +7,28 @@ Cabling:
   Data Line: yellow
 */
 
+
+
 #include <Wire.h>
 #include <HardwareSerial.h>
+
+#include <Adafruit_GFX.h> // Graphics library for displays
+#include <Adafruit_ST7735.h>
+#include <SPI.h>
+
 
 #include <Adafruit_MLX90614.h> // Temperature
 #include <TinyGPSPlus.h> // GPS
 #include <MPU9250_asukiaaa.h> // Gyroscope
 
+
+// Pins for LCD
+#define TFT_CS     5
+#define TFT_RST    4
+#define TFT_DC     2
+
+// SPI-based display (no MISO needed)
+Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 // Temp
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
@@ -25,6 +40,34 @@ HardwareSerial GPS_Serial(2);  // UART2
 // Gyro
 MPU9250_asukiaaa gyro;
 
+// LCD
+// Pins
+#define TFT_CS     5
+#define TFT_RST    4
+#define TFT_DC     2
+
+
+
+
+void drawCrosshair() {
+  int cx = tft.width() / 2;
+  int cy = tft.height() / 2;
+  int r = 6;
+  int gap = 0;
+  int len = 10;
+
+  tft.drawCircle(cx, cy, r, ST77XX_GREEN);
+  tft.drawLine(cx, cy - r - gap - len, cx, cy - r - gap, ST77XX_GREEN);     // Top
+  tft.drawLine(cx, cy + r + gap, cx, cy + r + gap + len, ST77XX_GREEN);     // Bottom
+  tft.drawLine(cx - r - gap - len, cy, cx - r - gap, cy, ST77XX_GREEN);     // Left
+  tft.drawLine(cx + r + gap, cy, cx + r + gap + len, cy, ST77XX_GREEN);     // Right
+}
+
+
+
+
+
+
 void setup() {
 
 
@@ -34,6 +77,33 @@ void setup() {
   // Configure this based on the current modules
   Wire.begin(21, 22);  // SDA = 21, SCL = 22
   
+  // Initialize the display
+
+
+
+  // Initialize with type of tab; most 1.8" ST7735S use BLACKTAB
+  tft.initR(INITR_BLACKTAB);  // Try INITR_GREENTAB or INITR_REDTAB if display looks off
+
+  tft.setRotation(1);         // 0–3, try different if upside down
+  tft.fillScreen(ST77XX_BLACK);
+
+  // Display text
+  // tft.setTextColor(ST77XX_GREEN);
+  // tft.setTextSize(2);
+  // tft.setCursor(10, 30);
+  // tft.println("Hello, World!");
+  tft.setCursor(60,80);
+  drawCrosshair();
+
+
+
+
+
+
+
+
+
+
 
   //mlx.begin();
 
