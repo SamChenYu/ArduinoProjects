@@ -15,6 +15,7 @@ Cabling:
 #include <Adafruit_GFX.h> // Graphics library for displays
 #include <Adafruit_ST7735.h>
 #include <SPI.h>
+#include <math.h>
 
 
 #include <Adafruit_MLX90614.h> // Temperature
@@ -31,7 +32,7 @@ Cabling:
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
 // Temp
-Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+Adafruit_MLX90614 temp = Adafruit_MLX90614();
 
 // GPS
 TinyGPSPlus gps;
@@ -47,23 +48,61 @@ MPU9250_asukiaaa gyro;
 #define TFT_DC     2
 
 
+// Buffered Data
+float prevRoll = -1.0;
+float currentRoll = 0.0;
 
 
-void drawCrosshair() {
-  int cx = tft.width() / 2;
-  int cy = tft.height() / 2;
-  int r = 6;
-  int gap = 0;
-  int len = 10;
 
-  tft.drawCircle(cx, cy, r, ST77XX_GREEN);
-  tft.drawLine(cx, cy - r - gap - len, cx, cy - r - gap, ST77XX_GREEN);     // Top
-  tft.drawLine(cx, cy + r + gap, cx, cy + r + gap + len, ST77XX_GREEN);     // Bottom
-  tft.drawLine(cx - r - gap - len, cy, cx - r - gap, cy, ST77XX_GREEN);     // Left
-  tft.drawLine(cx + r + gap, cy, cx + r + gap + len, cy, ST77XX_GREEN);     // Right
+
+
+
+void rotatePoint(float x, float y, float angleRad, float &outX, float &outY) {
+  outX = x * cos(angleRad) - y * sin(angleRad);
+  outY = x * sin(angleRad) + y * cos(angleRad);
 }
 
 
+
+void drawCrosshair(float rollDeg, uint16_t color) {
+  int cx = tft.width() / 2;
+  int cy = tft.height() / 2;
+
+  // === Sizes ===
+  int r = 5;
+  int tailLen = 20;
+  int shortTail = 12;
+
+  float rollRad = radians(rollDeg);
+
+  // === Central Ring ===
+  tft.drawCircle(cx, cy, r, color);
+
+  // === Horizontal Tails (rotated with roll) ===
+  for (int i = 0; i < 2; i++) {
+    int sign = (i == 0) ? -1 : 1;
+    float dx = sign * (r + tailLen);
+    
+    float x0, y0, x1, y1;
+    rotatePoint(dx, 0, rollRad, x0, y0);
+    rotatePoint(dx + sign * tailLen, 0, rollRad, x1, y1);
+
+    tft.drawLine(cx + x0, cy + y0, cx + x1, cy + y1, color);
+  }
+
+  // === Rotated short tails (90° apart) ===
+  int angles[] = {0, 90, 180, 270};
+  for (int i = 0; i < 4; i++) {
+    float angleRad = radians(angles[i]) + rollRad;
+
+    float x0 = cx + r * cos(angleRad);
+    float y0 = cy + r * sin(angleRad);
+    float x1 = cx + (r + shortTail) * cos(angleRad);
+    float y1 = cy + (r + shortTail) * sin(angleRad);
+
+    tft.drawLine(x0, y0, x1, y1, color);
+  }
+}
 
 
 
@@ -80,18 +119,20 @@ void setup() {
   // Initialize the display
   // Initialize with type of tab; most 1.8" ST7735S use BLACKTAB
   tft.initR(INITR_BLACKTAB);  // Try INITR_GREENTAB or INITR_REDTAB if display looks off
-  tft.setRotation(1);         // 0–3, try different if upside down
   tft.fillScreen(ST77XX_BLACK);
   // Display text
-  // tft.setTextColor(ST77XX_GREEN);
-  // tft.setTextSize(2);
-  // tft.setCursor(10, 30);
-  // tft.println("Hello, World!");
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextSize(1);
+  tft.setCursor(10, 30);
+  tft.println("Initializing...");
+  tft.println("");
+  tft.println("  SamChenYu");
+  tft.println("  Technologies");
   tft.setCursor(60,80);
-  drawCrosshair();
+
 
   // Temp
-  mlx.begin();
+  temp.begin();
 
   // GPS
   GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // We will override these next line
@@ -102,19 +143,24 @@ void setup() {
   gyro.beginGyro();
   gyro.beginMag();
 
-  Serial.println("Starting...");
-  
+  //delay(3000);
+  tft.println("");
+  for(int i=0; i<20; i++) {
+    tft.print("#");
+    delay(200);
+  } 
+  tft.fillScreen(ST77XX_BLACK);
 }
 
 void loop() {
 
 
-  
+  /*
   // Temp
   Serial.print("Ambient = ");
-  Serial.print(mlx.readAmbientTempC());
+  Serial.print(temp.readAmbientTempC());
   Serial.print(" °C\tObject = ");
-  Serial.print(mlx.readObjectTempC());
+  Serial.print(temp.readObjectTempC());
   Serial.println(" °C");
   
   // GPS
@@ -144,6 +190,8 @@ void loop() {
     }
   }
 
+
+  */
   // Gyro
   gyro.accelUpdate();
   gyro.gyroUpdate();
@@ -163,10 +211,23 @@ void loop() {
   Serial.print("G-force: "); Serial.println(gforce);
 
   // Gyro
-  Serial.print("Gyro X: "); Serial.print(gyro.gyroX());
-  Serial.print(" Y: "); Serial.print(gyro.gyroY());
-  Serial.print(" Z: "); Serial.println(gyro.gyroZ());
+
+  float accX = gyro.accelX();
+  float accY = gyro.accelY();
+  float accZ = gyro.accelZ();
+  Serial.print("Gyro X: "); Serial.print(accX);
+  Serial.print(" Y: "); Serial.print(accY);
+  Serial.print(" Z: "); Serial.println(accZ);
+  
+  prevRoll = currentRoll;
+  currentRoll = atan2(accY, accZ) * 180.0 / PI;
+  currentRoll /= 3.0;  // scale down sensitivity by 3×
 
 
-  delay(1000);
+  if (abs(currentRoll - prevRoll) > 0.05) { // Stability - only redraw when there are more changes
+    drawCrosshair(prevRoll, ST77XX_BLACK);
+    drawCrosshair(currentRoll, ST77XX_GREEN);
+  }
+
+  delay(1);
 }
