@@ -78,15 +78,10 @@ void setup() {
   Wire.begin(21, 22);  // SDA = 21, SCL = 22
   
   // Initialize the display
-
-
-
   // Initialize with type of tab; most 1.8" ST7735S use BLACKTAB
   tft.initR(INITR_BLACKTAB);  // Try INITR_GREENTAB or INITR_REDTAB if display looks off
-
   tft.setRotation(1);         // 0–3, try different if upside down
   tft.fillScreen(ST77XX_BLACK);
-
   // Display text
   // tft.setTextColor(ST77XX_GREEN);
   // tft.setTextSize(2);
@@ -95,38 +90,26 @@ void setup() {
   tft.setCursor(60,80);
   drawCrosshair();
 
-
-
-
-
-
-
-
-
-
-
-  //mlx.begin();
+  // Temp
+  mlx.begin();
 
   // GPS
-  //GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // We will override these next line
+  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // We will override these next line
 
-
+  // Gryo
   gyro.setWire(&Wire);
   gyro.beginAccel();
   gyro.beginGyro();
   gyro.beginMag();
 
-  Serial.println("MPU9250 ready");
-
-
-
+  Serial.println("Starting...");
   
 }
 
 void loop() {
 
 
-  /*
+  
   // Temp
   Serial.print("Ambient = ");
   Serial.print(mlx.readAmbientTempC());
@@ -161,7 +144,6 @@ void loop() {
     }
   }
 
-  */
   // Gyro
   gyro.accelUpdate();
   gyro.gyroUpdate();
@@ -184,12 +166,6 @@ void loop() {
   Serial.print("Gyro X: "); Serial.print(gyro.gyroX());
   Serial.print(" Y: "); Serial.print(gyro.gyroY());
   Serial.print(" Z: "); Serial.println(gyro.gyroZ());
-
-
-
-
-
-
 
 
   delay(1000);
