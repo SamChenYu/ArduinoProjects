@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bike HUD</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: black;
+    }
+    #startButton {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 12px 24px;
+      font-size: 18px;
+      z-index: 10;
+      border: none;
+      background: lime;
+      color: black;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <button id="startButton">Start HUD</button>
+  <canvas id="hudCanvas" width="320" height="240"></canvas>
+
+  <script>
+    const canvas = document.getElementById("hudCanvas");
+    const ctx = canvas.getContext("2d");
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    let heading = 0, pitch = 0, roll = 0, lastRoll = 0;
+    let temperature = 25;
+    let gForce = 1.0;
+
+    function rotatePoint(x, y, angle) {
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      return [
+        x * cosA - y * sinA,
+        x * sinA + y * cosA
+      ];
+    }
+
+    function drawPitchLadder(pitchDeg, rollDeg) {
+      let adjustedRoll = rollDeg;
+      if (Math.abs(adjustedRoll) > 90) adjustedRoll = adjustedRoll > 0 ? adjustedRoll - 180 : adjustedRoll + 180;
+      const rollRad = adjustedRoll * Math.PI / 180;
+      ctx.strokeStyle = "gray";
+      ctx.fillStyle = "gray";
+      ctx.font = "8px sans-serif";
+
+      for (let angle = 0; angle <= 180; angle += 10) {
+        const yOffset = (angle - pitchDeg) * -2;
+        const yPos = cy + yOffset;
+        if (yPos < 65 || yPos > canvas.height - 40) continue;
+
+        const rungWidth = 40;
+        let [x0, y0] = rotatePoint(-rungWidth / 2, yOffset, rollRad);
+        let [x1, y1] = rotatePoint(rungWidth / 2, yOffset, rollRad);
+        
+        ctx.beginPath();
+        ctx.moveTo(cx + x0, cy + y0);
+        ctx.lineTo(cx + x1, cy + y1);
+        ctx.stroke();
+
+        
+        
+        ctx.fillText(`${angle - 45}`, cx + x1 + 5, cy + y1 - 5); // 0 = forward // 0 = forward
+    
+      }
+    }
+
+    function drawCrosshair(rollDeg) {
+      let adjustedRoll = rollDeg;
+      const rollRad = adjustedRoll * Math.PI / 180;
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 2;
+
+      // Ring
+      const r = 5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+      ctx.stroke();
+
+      // Horizontal tails
+      const tailLen = 40;
+      [[-r - tailLen, -tailLen], [r + tailLen, tailLen]].forEach(([dx, offset]) => {
+        const [x0, y0] = rotatePoint(dx, 0, rollRad);
+        const [x1, y1] = rotatePoint(offset, 0, rollRad);
+        ctx.beginPath();
+        ctx.moveTo(cx + x0, cy + y0);
+        ctx.lineTo(cx + x1, cy + y1);
+        ctx.stroke();
+      });
+
+      // Cardinal ticks
+      [0, 90, 180, 270].forEach(angle => {
+        const rad = (angle + rollDeg) * Math.PI / 180;
+        const x0 = cx + r * Math.cos(rad);
+        const y0 = cy + r * Math.sin(rad);
+        const x1 = cx + (r + 12) * Math.cos(rad);
+        const y1 = cy + (r + 12) * Math.sin(rad);
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+      });
+    }
+
+    function drawCompass(heading) {
+      const spacing = 12, tickInterval = 5, labelInterval = 15, yPos = 20;
+      ctx.strokeStyle = "lime";
+      ctx.fillStyle = "lime";
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      ctx.moveTo(10, yPos + 10);
+      ctx.lineTo(canvas.width - 10, yPos + 10);
+      ctx.stroke();
+
+      const cardinalMap = {
+        0: "N", 45: "NE", 90: "E", 135: "SE",
+        180: "S", 225: "SW", 270: "W", 315: "NW"
+      };
+
+      const headingStep = Math.floor(heading / tickInterval);
+      const offset = (heading % tickInterval) / tickInterval * spacing;
+      const centerDeg = headingStep * tickInterval;
+
+      for (let i = -18; i <= 18; i++) {
+        const deg = (centerDeg + i * tickInterval + 360) % 360;
+        const x = cx + i * spacing - offset;
+        if (x < 10 || x > canvas.width - 10) continue;
+
+        if (deg % labelInterval === 0) {
+          ctx.beginPath();
+          ctx.moveTo(x, yPos + 5);
+          ctx.lineTo(x, yPos + 15);
+          ctx.stroke();
+
+          if (cardinalMap[deg]) {
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText(cardinalMap[deg], x - 5, yPos - 5);
+          }
+          ctx.font = "7px sans-serif";
+          ctx.fillText(`${deg}°`, x - 7, yPos + 25);
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(x, yPos + 10);
+          ctx.lineTo(x, yPos + 14);
+          ctx.stroke();
+        }
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(cx, yPos + 30);
+      ctx.lineTo(cx - 6, yPos + 40);
+      ctx.lineTo(cx + 6, yPos + 40);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawBars(temp, g) {
+      const barHeight = 100;
+      const top = cy - barHeight / 2;
+      const leftX = 40;
+      const rightX = canvas.width - 45;
+
+      const tempRatio = Math.min(Math.max((temp - 20) / 10, 0), 1);
+      const tempHeight = tempRatio * barHeight;
+      ctx.strokeStyle = "gray";
+      ctx.strokeRect(leftX, top, 5, barHeight);
+      ctx.fillStyle = temp > 25 ? "red" : "lime";
+      ctx.fillRect(leftX, top + (barHeight - tempHeight), 5, tempHeight);
+
+      const gRatio = Math.min(Math.max((g - 0.8) / 0.8, 0), 1);
+      const gHeight = gRatio * barHeight;
+      ctx.strokeRect(rightX, top, 5, barHeight);
+      ctx.fillStyle = g > 1.0 ? "red" : "lime";
+      ctx.fillRect(rightX, top + (barHeight - gHeight), 5, gHeight);
+    }
+
+    function drawHUD() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const t = Date.now() / 1000;
+      temperature = 25 + 2 * Math.sin(t / 3);
+      // gForce is now driven only by sensor data (set via devicemotion)
+
+      drawCrosshair(roll);
+      drawPitchLadder(pitch, roll);
+      drawCompass(heading);
+      drawBars(temperature, gForce);
+
+      ctx.fillStyle = temperature > 25 ? "red" : "lime";
+      ctx.font = "10px sans-serif";
+      ctx.fillText(`${temperature.toFixed(1)}°C`, 10, canvas.height - 10);
+
+      ctx.fillStyle = gForce > 1.0 ? "red" : "lime";
+      ctx.fillText(`${gForce.toFixed(2)} G`, canvas.width - 60, canvas.height - 10);
+
+      ctx.fillStyle = "lime";
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText(`${heading.toFixed(1)}°`, cx - 30, canvas.height - 10);
+
+      ctx.font = "10px sans-serif";
+      ctx.fillText(`${pitch.toFixed(1)}°`, cx - 30, canvas.height -35);
+
+      requestAnimationFrame(drawHUD);
+    }
+
+    drawHUD();
+
+    document.getElementById("startButton").addEventListener("click", async () => {
+      try {
+        if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
+          const perm1 = await DeviceOrientationEvent.requestPermission();
+          const perm2 = await DeviceMotionEvent.requestPermission();
+          if (perm1 !== 'granted' || perm2 !== 'granted') throw new Error('Permission denied');
+        }
+      } catch (e) {
+        alert("Motion permission error: " + e.message);
+        return;
+      }
+
+      window.addEventListener('deviceorientation', (event) => {
+        const rawRoll = event.gamma || 0;
+        const flip = Math.cos((event.beta || 0) * Math.PI / 180) >= 0 ? 1 : -1;
+        roll = lastRoll = flip * rawRoll;
+        heading = (event.alpha !== null && !isNaN(event.alpha)) ? event.alpha : heading;
+        let rawPitch = (event.beta || 0);
+        if (rawPitch > 180) rawPitch -= 360; // Normalize to -180 to 180
+        pitch = Math.max(Math.min(rawPitch + 45, 180), 0); // Adjust pitch: 45 = forward, 0 = ground
+      });
+
+      window.addEventListener('devicemotion', (event) => {
+        const ax = event.acceleration.x || 0;
+        const ay = event.acceleration.y || 0;
+        const az = event.acceleration.z || 0;
+        gForce = Math.sqrt(ax * ax + ay * ay + az * az) / 9.81;
+      });
+
+      document.getElementById("startButton").style.display = 'none';
+    });
+  </script>
+</body>
+</html>
