@@ -107,6 +107,7 @@ void drawCrosshair(float rollDeg, uint16_t color) {
 
 
 
+
 void setup() {
 
 
@@ -128,8 +129,6 @@ void setup() {
   tft.println("");
   tft.println("  SamChenYu");
   tft.println("  Technologies");
-  tft.setCursor(60,80);
-
 
   // Temp
   temp.begin();
@@ -143,12 +142,29 @@ void setup() {
   gyro.beginGyro();
   gyro.beginMag();
 
-  //delay(3000);
-  tft.println("");
-  for(int i=0; i<20; i++) {
-    tft.print("#");
+  // Fake Loading Screen
+
+  int x = 10;         // X position of the bar
+  int y = 80;         // Y position
+  int w = 100;        // Width of the full bar
+  int h = 10;         // Height
+  int maxSteps = 20;  // Total steps
+
+  for (int i = 0; i <= maxSteps; i++) {
+    // Draw border (static, can be moved outside the loop if desired)
+    tft.drawRect(x, y, w, h, ST77XX_WHITE);
+    // Clear the inside of the bar
+    tft.fillRect(x + 1, y + 1, w - 2, h - 2, ST77XX_BLACK);
+    // Calculate width to fill
+    int filled = ((w - 2) * i) / maxSteps;
+    // Draw the filled portion
+    tft.fillRect(x + 1, y + 1, filled, h - 2, ST77XX_GREEN);
+
     delay(200);
-  } 
+  }
+
+
+
   tft.fillScreen(ST77XX_BLACK);
 }
 
