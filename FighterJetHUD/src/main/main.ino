@@ -39,6 +39,7 @@ float currentRoll = 0.0;
 
 
 void initStaticHud() {
+  staticHud.fillSprite(TFT_BLACK);
 
   // === Sizes === (Refer to drawCrosshair for more details)
   int cx = staticHud.width() / 2;
@@ -142,10 +143,10 @@ void setup() {
   staticHud.createSprite(128,160);
   staticHud.setRotation(0);
   staticHud.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
+  staticHud.setSwapBytes(true);
   initStaticHud();
   hudSprite.createSprite(128, 160);
   hudSprite.setRotation(0);
-  hudSprite.setSwapBytes(true);
   hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
 
   // Display text
