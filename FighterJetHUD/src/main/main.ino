@@ -12,37 +12,15 @@ Cabling:
 #include <Wire.h>
 #include <HardwareSerial.h>
 
-#include <Adafruit_GFX.h> // Graphics library for displays
-#include <Adafruit_ST7735.h>
+#include <TFT_eSPI.h>
 #include <SPI.h>
 #include <math.h>
-
 
 #include <Adafruit_MLX90614.h> // Temperature
 #include <TinyGPSPlus.h> // GPS
 #include <MPU9250_asukiaaa.h> // Gyroscope
 
-
-// Pins for LCD
-#define TFT_CS     5
-#define TFT_RST    4
-#define TFT_DC     2
-
-// SPI-based display (no MISO needed)
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-
-// Temp
-Adafruit_MLX90614 temp = Adafruit_MLX90614();
-
-// GPS
-TinyGPSPlus gps;
-HardwareSerial GPS_Serial(2);  // UART2
-
-// Gyro
-MPU9250_asukiaaa gyro;
-
-// LCD
-// Pins
+// LCD PINS
 #define TFT_CS     5
 #define TFT_RST    4
 #define TFT_DC     2
@@ -50,8 +28,19 @@ MPU9250_asukiaaa gyro;
 #define HUD_W 128
 #define HUD_H 160
 
-// Buffered Data
+// LCD
+TFT_eSPI tft = TFT_eSPI(); // Uses pins from User_Setup.h
+// Temp
+Adafruit_MLX90614 temp = Adafruit_MLX90614();
+// GPS
+TinyGPSPlus gps;
+HardwareSerial GPS_Serial(2);  // UART2
+// Gyro
+MPU9250_asukiaaa gyro;
 
+
+
+// Buffered Data
 // Buffer holds a bitmap for the display -> constantly clearing screen and redrawing causes flickering
 uint16_t hudBuffer[HUD_W * HUD_H]; 
 
@@ -157,10 +146,10 @@ void setup() {
   
   // Initialize the display
   // Initialize with type of tab; most 1.8" ST7735S use BLACKTAB
-  tft.initR(INITR_BLACKTAB);  // Try INITR_GREENTAB or INITR_REDTAB if display looks off
-  tft.fillScreen(ST77XX_BLACK);
+  tft.init();
+  tft.fillScreen(ST7735_BLACK);
   // Display text
-  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextColor(ST7735_GREEN);
   tft.setTextSize(1);
   tft.setCursor(10, 30);
   tft.println("Initializing...");
@@ -190,20 +179,20 @@ void setup() {
 
   for (int i = 0; i <= maxSteps; i++) {
     // Draw border (static, can be moved outside the loop if desired)
-    tft.drawRect(x, y, w, h, ST77XX_WHITE);
+    tft.drawRect(x, y, w, h, ST7735_WHITE);
     // Clear the inside of the bar
-    tft.fillRect(x + 1, y + 1, w - 2, h - 2, ST77XX_BLACK);
+    tft.fillRect(x + 1, y + 1, w - 2, h - 2, ST7735_BLACK);
     // Calculate width to fill
     int filled = ((w - 2) * i) / maxSteps;
     // Draw the filled portion
-    tft.fillRect(x + 1, y + 1, filled, h - 2, ST77XX_GREEN);
+    tft.fillRect(x + 1, y + 1, filled, h - 2, ST7735_GREEN);
 
     delay(200);
   }
 
 
 
-  tft.fillScreen(ST77XX_BLACK);
+  tft.fillScreen(ST7735_BLACK);
 }
 
 void loop() {
@@ -279,8 +268,8 @@ void loop() {
 
 
   if (abs(currentRoll - prevRoll) > 0.05) { // Stability - only redraw when there are more changes
-    drawCrosshair(prevRoll, ST77XX_BLACK);
-    drawCrosshair(currentRoll, ST77XX_GREEN);
+    drawCrosshair(prevRoll, ST7735_BLACK);
+    drawCrosshair(currentRoll, ST7735_GREEN);
   }
 
   delay(50);
