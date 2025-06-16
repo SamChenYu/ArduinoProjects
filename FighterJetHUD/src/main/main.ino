@@ -126,6 +126,10 @@ void drawCrosshair(float rollDeg, uint16_t color) {
 
 
 void drawPitchLadders(float pitch, float roll, uint16_t color) {
+
+  int cx = hudSprite.width() / 2;
+  int cy = hudSprite.height() / 2;
+
   const int safeTop = 65;
   const int safeBottom = HUD_H - 40;
   const int rungWidth = 40;
@@ -133,7 +137,7 @@ void drawPitchLadders(float pitch, float roll, uint16_t color) {
 
   float rollRad = radians(roll);
 
-  for (int angle = -40; angle <= 40; angle += rungSpacing) {
+  for (int angle = -90; angle <= 90; angle += rungSpacing) {
     float yOffset = (angle - pitch) * -2;  // Negative for natural movement
     int yScreen = (int)(cy + yOffset);
 
@@ -301,14 +305,12 @@ void loop() {
   Serial.print(" Z: "); Serial.println(accZ);
   
   currentRoll = atan2(accY, accZ) * 180.0 / PI;
-  currentRoll /= 3.0;  // scale down sensitivity by 3×
 
   currentPitch = atan2(-accX, sqrt(accY * accY + accZ * accZ)) * 180.0 / PI;
 
 
-
   hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
-  drawPitchLadder(currentPitch, currentRoll, TFT_LIGHTGREY);
+  drawPitchLadders(currentPitch, currentRoll, TFT_LIGHTGREY);
   drawCrosshair(currentRoll, TFT_GREEN);
   hudSprite.pushSprite(0, 0);
 
