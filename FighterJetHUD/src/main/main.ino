@@ -44,7 +44,7 @@ void initStaticHud() {
   int cx = staticHud.width() / 2;
   int cy = staticHud.height() / 2;
   int r = 5;
-  int color = ST7735_GREEN;
+  int color = TFT_GREEN;
 
   // === Central Ring ===
   staticHud.drawCircle(cx, cy, r, color);
@@ -137,11 +137,11 @@ void setup() {
   hud.setRotation(0);
   hud.setViewport(0, 0, HUD_W, HUD_H);
   hud.setSwapBytes(true);
-  hud.fillScreen(ST7735_BLACK);
+  hud.fillScreen(TFT_BLACK);
 
   staticHud.createSprite(128,160);
   staticHud.setRotation(0);
-    hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
+  staticHud.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
   initStaticHud();
   hudSprite.createSprite(128, 160);
   hudSprite.setRotation(0);
@@ -149,7 +149,7 @@ void setup() {
   hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
 
   // Display text
-  hud.setTextColor(ST7735_GREEN);
+  hud.setTextColor(TFT_GREEN);
   hud.setTextSize(1);
   hud.setCursor(10, 30);
   hud.println("Initializing...");
@@ -174,25 +174,25 @@ void setup() {
 
   for (int i = 0; i <= maxSteps; i++) {
     // Draw border (static, can be moved outside the loop if desired)
-    hud.drawRect(x, y, w, h, ST7735_WHITE);
+    hud.drawRect(x, y, w, h, TFT_WHITE);
     // Clear the inside of the bar
-    hud.fillRect(x + 1, y + 1, w - 2, h - 2, ST7735_BLACK);
+    hud.fillRect(x + 1, y + 1, w - 2, h - 2, TFT_BLACK);
     // Calculate width to fill
     int filled = ((w - 2) * i) / maxSteps;
     // Draw the filled portion
-    hud.fillRect(x + 1, y + 1, filled, h - 2, ST7735_GREEN);
+    hud.fillRect(x + 1, y + 1, filled, h - 2, TFT_GREEN);
 
     delay(200);
   }
 
 
   // Clear the screen after loading
-  hud.fillScreen(ST7735_BLACK);
+  hud.fillScreen(TFT_BLACK);
 }
 
 void loop() {
   // Clear the framebuffer
-  hudSprite.fillSprite(ST7735_BLACK);
+  hudSprite.fillSprite(TFT_BLACK);
 
   /*
   // Temp
@@ -264,7 +264,7 @@ void loop() {
 
 
   hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
-  drawCrosshair(currentRoll, ST7735_GREEN);
+  drawCrosshair(currentRoll, TFT_GREEN);
   hudSprite.pushSprite(0, 0);
 
 
