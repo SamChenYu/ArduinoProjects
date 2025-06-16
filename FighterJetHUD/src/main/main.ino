@@ -47,7 +47,7 @@ void initStaticHud() {
   int color = ST7735_GREEN;
 
   // === Central Ring ===
-  hudSprite.drawCircle(cx, cy, r, color);
+  staticHud.drawCircle(cx, cy, r, color);
 
   // Draw the outer circle and ticks
   int arc_radius = 30; // Radius of the outer circle
@@ -55,7 +55,7 @@ void initStaticHud() {
   int tick_spacing_deg = 15;
 
   // === Full Circle ===
-  hudSprite.drawCircle(cx, cy, arc_radius, color);
+  staticHud.drawCircle(cx, cy, arc_radius, color);
 
   // === Arc Tick Marks — Top and Bottom semicircles ===
   for (int angle = 0; angle <= 360; angle += tick_spacing_deg) {
@@ -75,7 +75,7 @@ void initStaticHud() {
     float y_inner = y_outer + (dy / dist) * tick_len;
 
     // Draw tick mark
-    hudSprite.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
+    staticHud.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
   }
 
 }
