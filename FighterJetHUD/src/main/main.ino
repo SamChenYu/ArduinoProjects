@@ -275,5 +275,5 @@ void loop() {
   }
   hudSprite.pushSprite(0, 0);
 
-  delay(50);
+  //delay(50);
 }
