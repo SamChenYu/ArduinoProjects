@@ -1,14 +1,3 @@
-/*
-esp32:esp32doit-devkit-v1
-Cabling:
-  Power: red
-  Ground: black
-  Clock Line: blue
-  Data Line: yellow
-*/
-
-
-
 #include <Wire.h>
 #include <HardwareSerial.h>
 
@@ -30,6 +19,7 @@ Cabling:
 
 // LCD
 TFT_eSPI hud = TFT_eSPI(); // Uses pins from User_Setup.h
+TFT_eSprite staticHud = TFT_eSprite(&hud); // Contains the static elements so no redraw is needed
 TFT_eSprite hudSprite = TFT_eSprite(&hud);  // Sprite tied to display (Kind of like a framebuffer - otherwise would have too much flickering)
 
 // Temp
@@ -42,22 +32,58 @@ MPU9250_asukiaaa gyro;
 
 
 
-// Buffered Sensor Data
 
+// Buffered Sensor Data
 float prevRoll = -1.0;
 float currentRoll = 0.0;
 
 
+void initStaticHud() {
 
+  // === Sizes === (Refer to drawCrosshair for more details)
+  int cx = staticHud.width() / 2;
+  int cy = staticHud.height() / 2;
+  int r = 5;
+  int color = ST7735_GREEN;
 
+  // === Central Ring ===
+  hudSprite.drawCircle(cx, cy, r, color);
 
+  // Draw the outer circle and ticks
+  int arc_radius = 30; // Radius of the outer circle
+  int tick_len = 5;
+  int tick_spacing_deg = 15;
+
+  // === Full Circle ===
+  hudSprite.drawCircle(cx, cy, arc_radius, color);
+
+  // === Arc Tick Marks — Top and Bottom semicircles ===
+  for (int angle = 0; angle <= 360; angle += tick_spacing_deg) {
+    float rad = radians(angle);
+
+    // Outer tick position on circle
+    float x_outer = cx + arc_radius * cos(rad);
+    float y_outer = cy + arc_radius * sin(rad);
+
+    // Vector from tick to center
+    float dx = cx - x_outer;
+    float dy = cy - y_outer;
+    float dist = sqrt(dx * dx + dy * dy);
+
+    // Normalize and scale to tick length
+    float x_inner = x_outer + (dx / dist) * tick_len;
+    float y_inner = y_outer + (dy / dist) * tick_len;
+
+    // Draw tick mark
+    hudSprite.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
+  }
+
+}
 
 void rotatePoint(float x, float y, float angleRad, float &outX, float &outY) {
   outX = x * cos(angleRad) - y * sin(angleRad);
   outY = x * sin(angleRad) + y * cos(angleRad);
 }
-
-
 
 void drawCrosshair(float rollDeg, uint16_t color) {
   int cx = hudSprite.width() / 2;
@@ -69,9 +95,6 @@ void drawCrosshair(float rollDeg, uint16_t color) {
   int shortTail = 12;
 
   float rollRad = radians(rollDeg);
-
-  // === Central Ring ===
-  hudSprite.drawCircle(cx, cy, r, color);
 
   // === Horizontal Tails (rotated with roll) ===
   for (int i = 0; i < 2; i++) {
@@ -97,37 +120,6 @@ void drawCrosshair(float rollDeg, uint16_t color) {
 
     hudSprite.drawLine(x0, y0, x1, y1, color);
 
-
-    // Draw the outer circle and ticks
-    int arc_radius = 30; // Radius of the outer circle
-    int tick_len = 5;
-    int tick_spacing_deg = 15;
-
-    // === Full Circle ===
-    hudSprite.drawCircle(cx, cy, arc_radius, color);
-
-    // === Arc Tick Marks — Top and Bottom semicircles ===
-    for (int angle = 0; angle <= 360; angle += tick_spacing_deg) {
-      float rad = radians(angle);
-
-      // Outer tick position on circle
-      float x_outer = cx + arc_radius * cos(rad);
-      float y_outer = cy + arc_radius * sin(rad);
-
-      // Vector from tick to center
-      float dx = cx - x_outer;
-      float dy = cy - y_outer;
-      float dist = sqrt(dx * dx + dy * dy);
-
-      // Normalize and scale to tick length
-      float x_inner = x_outer + (dx / dist) * tick_len;
-      float y_inner = y_outer + (dy / dist) * tick_len;
-
-      // Draw tick mark
-      hudSprite.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
-    }
-
-
   }
 }
 
@@ -148,12 +140,14 @@ void setup() {
   hud.setRotation(0);
   hud.setViewport(0, 0, HUD_W, HUD_H);
   hud.setSwapBytes(true);
-  hudSprite.setSwapBytes(true);
-  hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
   hud.fillScreen(ST7735_BLACK);
 
-  hudSprite.createSprite(128, 160);  // full-screen for ST7735
+  staticHud.createSprite(128,160);
+  staticHud.setRotation(0);
+  hudSprite.createSprite(128, 160);
   hudSprite.setRotation(0);
+  hudSprite.setSwapBytes(true);
+  hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
 
   // Display text
   hud.setTextColor(ST7735_GREEN);
@@ -270,10 +264,12 @@ void loop() {
   currentRoll /= 3.0;  // scale down sensitivity by 3×
 
 
+  //hudSprite.pushImage(0,0,128,160, staticHud.getPointer()); // Clone the base
   if (abs(currentRoll - prevRoll) > 0.05) { // Stability - only redraw when there are more changes
     drawCrosshair(currentRoll, ST7735_GREEN);
   }
   hudSprite.pushSprite(0, 0);
+
 
   //delay(50);
 }

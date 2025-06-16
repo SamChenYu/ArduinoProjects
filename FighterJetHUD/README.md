@@ -8,3 +8,26 @@ Building a Fighter Jet Style HUD Attachment For My Mountain Bike
 - GPS Module NEO-M8
 - LCD TFT 1.8" ST7735
 - DOIT ESP32 DevKit V1
+
+## Sensor Libraries  
+- Adafruit_MLX90614  
+- MPU9250_asukiaaa 
+- TinyGPSPlus  
+- TFT_eSPI  (User_Setup.h in /src)
+
+## 📡 Sensor & Display Wiring
+
+| Component                         | Signal     | ESP32 Pin | Notes                               |
+| --------------------------------- | ---------- | --------- | ----------------------------------- |
+| **LCD Module (ST7735)**           | SCLK (SCL) | D18       | SPI Clock                           |
+|                                   | MOSI (SDA) | D23       | SPI Data (Master Out Slave In)      |
+|                                   | RST        | D4        | Hardware Reset                      |
+|                                   | DC (OC)    | D2        | Data/Command Select                 |
+|                                   | CS (DS)    | D5        | Chip Select                         |
+| **Temperature Sensor (MLX90614)** | SCL        | D22       | I²C Clock                           |
+|                                   | SDA        | D21       | I²C Data                            |
+| **Gyroscope Sensor (MPU9250)**    | SCL        | D22       | I²C Clock (shared with temp sensor) |
+|                                   | SDA        | D21       | I²C Data  (shared with temp sensor) |
+| **GPS Module (NEO-M8)**           | TXD        | RX2 (16)  | GPS TX → ESP32 RX2 (receive)        |
+|                                   | RXD        | TX2 (17)  | GPS RX ← ESP32 TX2 (transmit)       |
+
