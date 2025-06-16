@@ -141,6 +141,7 @@ void setup() {
 
   staticHud.createSprite(128,160);
   staticHud.setRotation(0);
+    hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
   initStaticHud();
   hudSprite.createSprite(128, 160);
   hudSprite.setRotation(0);
@@ -191,7 +192,7 @@ void setup() {
 
 void loop() {
   // Clear the framebuffer
-  hudSprite.fillSprite(TFT_BLACK);
+  hudSprite.fillSprite(ST7735_BLACK);
 
   /*
   // Temp
@@ -263,9 +264,7 @@ void loop() {
 
 
   hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
-  if (abs(currentRoll - prevRoll) > 0.05) { // Stability - only redraw when there are more changes
-    drawCrosshair(currentRoll, ST7735_GREEN);
-  }
+  drawCrosshair(currentRoll, ST7735_GREEN);
   hudSprite.pushSprite(0, 0);
 
 
