@@ -47,8 +47,14 @@ MPU9250_asukiaaa gyro;
 #define TFT_RST    4
 #define TFT_DC     2
 
+#define HUD_W 128
+#define HUD_H 160
 
 // Buffered Data
+
+// Buffer holds a bitmap for the display -> constantly clearing screen and redrawing causes flickering
+uint16_t hudBuffer[HUD_W * HUD_H]; 
+
 float prevRoll = -1.0;
 float currentRoll = 0.0;
 
@@ -101,6 +107,38 @@ void drawCrosshair(float rollDeg, uint16_t color) {
     float y1 = cy + (r + shortTail) * sin(angleRad);
 
     tft.drawLine(x0, y0, x1, y1, color);
+
+
+    // Draw the outer circle and ticks
+    int arc_radius = 30; // Radius of the outer circle
+    int tick_len = 5;
+    int tick_spacing_deg = 15;
+
+    // === Full Circle ===
+    tft.drawCircle(cx, cy, arc_radius, color);
+
+    // === Arc Tick Marks — Top and Bottom semicircles ===
+    for (int angle = 0; angle <= 360; angle += tick_spacing_deg) {
+      float rad = radians(angle);
+
+      // Outer tick position on circle
+      float x_outer = cx + arc_radius * cos(rad);
+      float y_outer = cy + arc_radius * sin(rad);
+
+      // Vector from tick to center
+      float dx = cx - x_outer;
+      float dy = cy - y_outer;
+      float dist = sqrt(dx * dx + dy * dy);
+
+      // Normalize and scale to tick length
+      float x_inner = x_outer + (dx / dist) * tick_len;
+      float y_inner = y_outer + (dy / dist) * tick_len;
+
+      // Draw tick mark
+      tft.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
+    }
+
+
   }
 }
 
@@ -245,5 +283,5 @@ void loop() {
     drawCrosshair(currentRoll, ST77XX_GREEN);
   }
 
-  delay(1);
+  delay(50);
 }

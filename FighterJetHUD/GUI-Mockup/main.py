@@ -131,20 +131,14 @@ def draw_crosshair(roll_deg):
     #     crosshair_items.append(line)
 
 
-    # === Static HUD Semi-Circles ===
-    top_arc = canvas.create_arc(
-        cx - arc_radius, cy - arc_radius - arc_offset,
-        cx + arc_radius, cy + arc_radius - arc_offset,
-        start=0, extent=180, style=tk.ARC,
-        outline="lime", width=arc_width
-    )
-    bottom_arc = canvas.create_arc(
-        cx - arc_radius, cy - arc_radius + arc_offset,
-        cx + arc_radius, cy + arc_radius + arc_offset,
-        start=180, extent=180, style=tk.ARC,
-        outline="lime", width=arc_width
-    )
-    crosshair_items.extend([top_arc, bottom_arc])
+        # === Static HUD Full Circle ===
+        full_circle = canvas.create_oval(
+            cx - arc_radius, cy - arc_radius,
+            cx + arc_radius, cy + arc_radius,
+            outline="lime", width=arc_width
+        )
+
+        crosshair_items.append(full_circle)
 
     # === Arc Tick Marks — EXACTLY on arc path ===
     tick_len = 5
