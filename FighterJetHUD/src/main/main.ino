@@ -29,7 +29,9 @@ Cabling:
 #define HUD_H 160
 
 // LCD
-TFT_eSPI tft = TFT_eSPI(); // Uses pins from User_Setup.h
+TFT_eSPI hud = TFT_eSPI(); // Uses pins from User_Setup.h
+TFT_eSprite hudSprite = TFT_eSprite(&hud);  // Sprite tied to display (Kind of like a framebuffer - otherwise would have too much flickering)
+
 // Temp
 Adafruit_MLX90614 temp = Adafruit_MLX90614();
 // GPS
@@ -40,9 +42,7 @@ MPU9250_asukiaaa gyro;
 
 
 
-// Buffered Data
-// Buffer holds a bitmap for the display -> constantly clearing screen and redrawing causes flickering
-uint16_t hudBuffer[HUD_W * HUD_H]; 
+// Buffered Sensor Data
 
 float prevRoll = -1.0;
 float currentRoll = 0.0;
@@ -60,8 +60,8 @@ void rotatePoint(float x, float y, float angleRad, float &outX, float &outY) {
 
 
 void drawCrosshair(float rollDeg, uint16_t color) {
-  int cx = tft.width() / 2;
-  int cy = tft.height() / 2;
+  int cx = hudSprite.width() / 2;
+  int cy = hudSprite.height() / 2;
 
   // === Sizes ===
   int r = 5;
@@ -71,7 +71,7 @@ void drawCrosshair(float rollDeg, uint16_t color) {
   float rollRad = radians(rollDeg);
 
   // === Central Ring ===
-  tft.drawCircle(cx, cy, r, color);
+  hudSprite.drawCircle(cx, cy, r, color);
 
   // === Horizontal Tails (rotated with roll) ===
   for (int i = 0; i < 2; i++) {
@@ -82,7 +82,7 @@ void drawCrosshair(float rollDeg, uint16_t color) {
     rotatePoint(dx, 0, rollRad, x0, y0);
     rotatePoint(dx + sign * tailLen, 0, rollRad, x1, y1);
 
-    tft.drawLine(cx + x0, cy + y0, cx + x1, cy + y1, color);
+    hudSprite.drawLine(cx + x0, cy + y0, cx + x1, cy + y1, color);
   }
 
   // === Rotated short tails (90° apart) ===
@@ -95,7 +95,7 @@ void drawCrosshair(float rollDeg, uint16_t color) {
     float x1 = cx + (r + shortTail) * cos(angleRad);
     float y1 = cy + (r + shortTail) * sin(angleRad);
 
-    tft.drawLine(x0, y0, x1, y1, color);
+    hudSprite.drawLine(x0, y0, x1, y1, color);
 
 
     // Draw the outer circle and ticks
@@ -104,7 +104,7 @@ void drawCrosshair(float rollDeg, uint16_t color) {
     int tick_spacing_deg = 15;
 
     // === Full Circle ===
-    tft.drawCircle(cx, cy, arc_radius, color);
+    hudSprite.drawCircle(cx, cy, arc_radius, color);
 
     // === Arc Tick Marks — Top and Bottom semicircles ===
     for (int angle = 0; angle <= 360; angle += tick_spacing_deg) {
@@ -124,7 +124,7 @@ void drawCrosshair(float rollDeg, uint16_t color) {
       float y_inner = y_outer + (dy / dist) * tick_len;
 
       // Draw tick mark
-      tft.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
+      hudSprite.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
     }
 
 
@@ -141,36 +141,31 @@ void setup() {
   delay(2000);
   Serial.begin(9600);
 
-  // Configure this based on the current modules
   Wire.begin(21, 22);  // SDA = 21, SCL = 22
   
-  // Initialize the display
-  // Initialize with type of tab; most 1.8" ST7735S use BLACKTAB
-  tft.init();
-  tft.fillScreen(ST7735_BLACK);
+  // Init the display, show loading screen
+  hud.init();
+  hudSprite.createSprite(128, 160);  // full-screen for ST7735
+  hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
+  hud.fillScreen(ST7735_BLACK);
   // Display text
-  tft.setTextColor(ST7735_GREEN);
-  tft.setTextSize(1);
-  tft.setCursor(10, 30);
-  tft.println("Initializing...");
-  tft.println("");
-  tft.println("  SamChenYu");
-  tft.println("  Technologies");
+  hud.setTextColor(ST7735_GREEN);
+  hud.setTextSize(1);
+  hud.setCursor(10, 30);
+  hud.println("Initializing...");
+  hud.println("");
+  hud.println("  SamChenYu");
+  hud.println("  Technologies");
 
-  // Temp
+  // Start sensors
   temp.begin();
-
-  // GPS
   GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // We will override these next line
-
-  // Gryo
   gyro.setWire(&Wire);
   gyro.beginAccel();
   gyro.beginGyro();
   gyro.beginMag();
 
   // Fake Loading Screen
-
   int x = 10;         // X position of the bar
   int y = 80;         // Y position
   int w = 100;        // Width of the full bar
@@ -179,24 +174,25 @@ void setup() {
 
   for (int i = 0; i <= maxSteps; i++) {
     // Draw border (static, can be moved outside the loop if desired)
-    tft.drawRect(x, y, w, h, ST7735_WHITE);
+    hud.drawRect(x, y, w, h, ST7735_WHITE);
     // Clear the inside of the bar
-    tft.fillRect(x + 1, y + 1, w - 2, h - 2, ST7735_BLACK);
+    hud.fillRect(x + 1, y + 1, w - 2, h - 2, ST7735_BLACK);
     // Calculate width to fill
     int filled = ((w - 2) * i) / maxSteps;
     // Draw the filled portion
-    tft.fillRect(x + 1, y + 1, filled, h - 2, ST7735_GREEN);
+    hud.fillRect(x + 1, y + 1, filled, h - 2, ST7735_GREEN);
 
     delay(200);
   }
 
 
-
-  tft.fillScreen(ST7735_BLACK);
+  // Clear the screen after loading
+  hud.fillScreen(ST7735_BLACK);
 }
 
 void loop() {
-
+  // Clear the framebuffer
+  hudSprite.fillSprite(TFT_BLACK);
 
   /*
   // Temp
@@ -268,9 +264,9 @@ void loop() {
 
 
   if (abs(currentRoll - prevRoll) > 0.05) { // Stability - only redraw when there are more changes
-    drawCrosshair(prevRoll, ST7735_BLACK);
     drawCrosshair(currentRoll, ST7735_GREEN);
   }
+  hudSprite.pushSprite(0, 0);
 
   delay(50);
 }
