@@ -124,9 +124,6 @@ void drawCrosshair(float rollDeg, uint16_t color) {
 }
 
 
-
-
-
 void setup() {
 
 
@@ -144,6 +141,7 @@ void setup() {
 
   staticHud.createSprite(128,160);
   staticHud.setRotation(0);
+  initStaticHud();
   hudSprite.createSprite(128, 160);
   hudSprite.setRotation(0);
   hudSprite.setSwapBytes(true);
@@ -264,7 +262,7 @@ void loop() {
   currentRoll /= 3.0;  // scale down sensitivity by 3×
 
 
-  //hudSprite.pushImage(0,0,128,160, staticHud.getPointer()); // Clone the base
+  hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
   if (abs(currentRoll - prevRoll) > 0.05) { // Stability - only redraw when there are more changes
     drawCrosshair(currentRoll, ST7735_GREEN);
   }
