@@ -34,8 +34,8 @@ MPU9250_asukiaaa gyro;
 
 
 // Buffered Sensor Data
-float prevRoll = -1.0;
 float currentRoll = 0.0;
+float currentPitch = 0.0;
 
 
 void initStaticHud() {
@@ -123,6 +123,47 @@ void drawCrosshair(float rollDeg, uint16_t color) {
 
   }
 }
+
+
+void drawPitchLadders(float pitch, float roll, uint16_t color) {
+  const int safeTop = 65;
+  const int safeBottom = HUD_H - 40;
+  const int rungWidth = 40;
+  const int rungSpacing = 10; // Degrees between rungs
+
+  float rollRad = radians(roll);
+
+  for (int angle = -40; angle <= 40; angle += rungSpacing) {
+    float yOffset = (angle - pitch) * -2;  // Negative for natural movement
+    int yScreen = (int)(cy + yOffset);
+
+    if (yScreen > safeTop && yScreen < safeBottom) {
+      // Rung endpoints (relative to center)
+      float x0 = -rungWidth / 2, y0 = yOffset;
+      float x1 =  rungWidth / 2, y1 = yOffset;
+
+      // Rotate based on roll
+      float x0r, y0r, x1r, y1r;
+      rotatePoint(x0, y0, rollRad, x0r, y0r);
+      rotatePoint(x1, y1, rollRad, x1r, y1r);
+
+      // Translate and draw
+      hudSprite.drawLine(cx + x0r, cy + y0r, cx + x1r, cy + y1r, color);
+
+      // Label near right end
+      int labelX = cx + x1r + 5;
+      int labelY = cy + y1r - 5;
+      hudSprite.setTextDatum(TL_DATUM); // Top-left corner for label
+      hudSprite.setTextColor(color, TFT_BLACK);
+      hudSprite.drawString(String(-angle), labelX, labelY);
+    }
+  }
+}
+
+
+
+
+
 
 
 void setup() {
@@ -259,12 +300,15 @@ void loop() {
   Serial.print(" Y: "); Serial.print(accY);
   Serial.print(" Z: "); Serial.println(accZ);
   
-  prevRoll = currentRoll;
   currentRoll = atan2(accY, accZ) * 180.0 / PI;
   currentRoll /= 3.0;  // scale down sensitivity by 3×
 
+  currentPitch = atan2(-accX, sqrt(accY * accY + accZ * accZ)) * 180.0 / PI;
+
+
 
   hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
+  drawPitchLadder(currentPitch, currentRoll, TFT_LIGHTGREY);
   drawCrosshair(currentRoll, TFT_GREEN);
   hudSprite.pushSprite(0, 0);
 
