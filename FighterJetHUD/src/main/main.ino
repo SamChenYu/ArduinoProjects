@@ -145,9 +145,16 @@ void setup() {
   
   // Init the display, show loading screen
   hud.init();
-  hudSprite.createSprite(128, 160);  // full-screen for ST7735
+  hud.setRotation(0);
+  hud.setViewport(0, 0, HUD_W, HUD_H);
+  hud.setSwapBytes(true);
+  hudSprite.setSwapBytes(true);
   hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);  // text color + background
   hud.fillScreen(ST7735_BLACK);
+
+  hudSprite.createSprite(128, 160);  // full-screen for ST7735
+  hudSprite.setRotation(0);
+
   // Display text
   hud.setTextColor(ST7735_GREEN);
   hud.setTextSize(1);
