@@ -34,6 +34,11 @@ const char* cardinalMap[360] {nullptr}; // Cardinal directions for compass
 // Buffered Sensor Data
 float currentRoll = 0.0;
 float currentPitch = 0.0;
+float gForce = 0.0;
+
+float ambientTemp = 0.0;
+float objectTemp = 0.0;
+
 
 
 void initStaticHud() {
@@ -246,8 +251,38 @@ void drawCompassSlider(float heading) {
 
 }
 
+void drawTemperatureBar(float ambient, float object) {
+  int barHeight = 100;
+  int barTop = hudSprite.height() / 2 - barHeight / 2;
+  int tempBarX = 15; // Left Side
+  int gBarX = hudSprite.width() - tempBarX; // Right side
 
+  // Clear previous bars
+  hudSprite.fillRect(tempBarX - 5, barTop, 50, barHeight, TFT_BLACK);
+  hudSprite.fillRect(gBarX + 5, barTop, 50, barHeight, TFT_BLACK);
 
+  // Ambient Temperature Bar
+  int ambientY = barTop + (int)((1.0 - (ambient - 20) / 10.0) * barHeight);
+  hudSprite.fillRect(tempBarX - 3, ambientY, 6, barHeight - (ambientY - barTop), TFT_RED);
+  
+  // Object Temperature Bar
+  int objectY = barTop + (int)((1.0 - (object - 20) / 10.0) * barHeight);
+  hudSprite.fillRect(gBarX + 6, objectY, 6, barHeight - (objectY - barTop), TFT_BLUE);
+
+}
+
+void drawGForceBar(float gForce) {
+  int barHeight = 100;
+  int barTop = hudSprite.height() / 2 - barHeight / 2;
+  int gBarX = hudSprite.width() - 15; // Right side
+
+  // Clear previous bar
+  hudSprite.fillRect(gBarX + 5, barTop, 50, barHeight, TFT_BLACK);
+
+  // G-force Bar
+  int gY = barTop + (int)((1.0 - (gForce + 0.5) / 2.5) * barHeight);
+  hudSprite.fillRect(gBarX + 6, gY, 6, barHeight - (gY - barTop), TFT_YELLOW);
+}
 
 
 void setup() {
@@ -324,14 +359,12 @@ void loop() {
   // Clear the framebuffer
   hudSprite.fillSprite(TFT_BLACK);
 
-  /*
+  // === Sensor Readings ===
   // Temp
-  Serial.print("Ambient = ");
-  Serial.print(temp.readAmbientTempC());
-  Serial.print(" °C\tObject = ");
-  Serial.print(temp.readObjectTempC());
-  Serial.println(" °C");
-  
+  ambientTemp = temp.readAmbientTempC();
+  objectTemp = temp.readObjectTempC();
+
+  /*
   // GPS
   while (GPS_Serial.available()) {
     gps.encode(GPS_Serial.read());
@@ -358,8 +391,6 @@ void loop() {
       Serial.println(gps.altitude.meters());
     }
   }
-
-
   */
   // Gyro
   gyro.accelUpdate();
@@ -371,30 +402,32 @@ void loop() {
   if (heading < 0) {
     heading += 360;
   }
-  Serial.print("Heading: "); Serial.print(heading); Serial.println("°");
+  //Serial.print("Heading: "); Serial.print(heading); Serial.println("°");
   // G-force
-  float gforce = sqrt(
+  gForce = sqrt(
     sq(gyro.accelX()) +
     sq(gyro.accelY()) +
     sq(gyro.accelZ()));
-  Serial.print("G-force: "); Serial.println(gforce);
+  //Serial.print("G-force: "); Serial.println(gforce);
 
   // Gyro
   float accX = gyro.accelX();
   float accY = gyro.accelY();
   float accZ = gyro.accelZ();
-  Serial.print("Gyro X: "); Serial.print(accX);
-  Serial.print(" Y: "); Serial.print(accY);
-  Serial.print(" Z: "); Serial.println(accZ);
+  //Serial.print("Gyro X: "); Serial.print(accX);
+  //Serial.print(" Y: "); Serial.print(accY);
+  //Serial.print(" Z: "); Serial.println(accZ);
   
   currentRoll = atan2(accY, accZ) * 180.0 / PI;
   currentPitch = atan2(-accX, sqrt(accY * accY + accZ * accZ)) * 180.0 / PI;
 
-
+  // === Draw HUD ===
   hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
   drawPitchLadders(currentPitch, currentRoll, TFT_LIGHTGREY);
   drawCrosshair(currentRoll, TFT_GREEN);
   drawCompassSlider(heading);
+  drawTemperatureBar(ambientTemp, objectTemp);
+  drawGForceBar(gForce);
   hudSprite.pushSprite(0, 0);
 
 
