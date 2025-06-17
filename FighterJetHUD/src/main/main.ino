@@ -32,8 +32,8 @@ const char* cardinalMap[360] {nullptr}; // Cardinal directions for compass
 
 // Buffered Sensor Data
 float currentRoll = 0.0; const float rollNoiseThreshold = 0.1;
-float currentPitch = 0.0; const float pitchNoiseThreshold = 1.0;
-float currentHeading = 0.0; const float headingNoiseThreshold = 0.3;
+float currentPitch = 0.0; const float pitchNoiseThreshold = 3.0;
+float currentHeading = 0.0; const float headingNoiseThreshold = 0.5;
 float gForce = 0.0;
 
 float ambientTemp = 0.0;
@@ -289,16 +289,16 @@ void drawGPSData() {
   
   if(gpsSignal && gpsHasFix) {
     // Valid data
-    hudSprite.drawString(gpsStatus, hudSprite.width()/2, 140);
-    hudSprite.drawString("Lat: " + String(gpsLatitude, 6), hudSprite.width()/2, 150);
-    hudSprite.drawString("Lon: " + String(gpsLongitude, 6), hudSprite.width()/2, 160);
+    hudSprite.drawString(gpsStatus, 25, 130);
+    hudSprite.drawString("Lat: " + String(gpsLatitude, 6), 20, 150);
+    hudSprite.drawString("Lon: " + String(gpsLongitude, 6), 20, 160);
 
   } else if(gpsSignal) {
     // Signal but no fix
-    hudSprite.drawString(gpsStatus, hudSprite.width()/2, 140);
+    hudSprite.drawString(gpsStatus, 25 , 130);
   } else {
     // No signal
-    hudSprite.drawString(gpsStatus, hudSprite.width()/2, 140);
+    hudSprite.drawString(gpsStatus, 25, 130);
   }
 }
 
