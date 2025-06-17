@@ -1,10 +1,9 @@
 #include <Wire.h>
 #include <HardwareSerial.h>
-
-#include <TFT_eSPI.h>
 #include <SPI.h>
 #include <math.h>
 
+#include <TFT_eSPI.h> // LCD
 #include <Adafruit_MLX90614.h> // Temperature
 #include <TinyGPSPlus.h> // GPS
 #include <MPU9250_asukiaaa.h> // Gyroscope
@@ -40,7 +39,13 @@ float gForce = 0.0;
 float ambientTemp = 0.0;
 float objectTemp = 0.0;
 
-
+String gpsStatus = "[--] Searching";
+bool gpsSignal = false;
+bool gpsHasFix = false; 
+double gpsLatitude = 0.0;
+double gpsLongitude = 0.0;
+double gpsAltitude = 0.0;
+int gpsSatellites = 0;
 
 void initStaticHud() {
   staticHud.fillSprite(TFT_BLACK);
@@ -278,6 +283,24 @@ void drawGForceBar(float gForce) {
   hudSprite.drawString(String(gForce, 1), gBarX-5, 140);
 }
 
+void drawGPSData() {
+  hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);
+  hudSprite.setTextSize(1);
+  
+  if(gpsSignal && gpsHasFix) {
+    // Valid data
+    hudSprite.drawString(gpsStatus, hudSprite.width()/2, 140);
+    hudSprite.drawString("Lat: " + String(gpsLatitude, 6), hudSprite.width()/2, 150);
+    hudSprite.drawString("Lon: " + String(gpsLongitude, 6), hudSprite.width()/2, 160);
+
+  } else if(gpsSignal) {
+    // Signal but no fix
+    hudSprite.drawString(gpsStatus, hudSprite.width()/2, 140);
+  } else {
+    // No signal
+    hudSprite.drawString(gpsStatus, hudSprite.width()/2, 140);
+  }
+}
 
 void setup() {
 
@@ -358,34 +381,49 @@ void loop() {
   ambientTemp = temp.readAmbientTempC();
   objectTemp = temp.readObjectTempC();
 
-  /*
+  
   // GPS
   while (GPS_Serial.available()) {
     gps.encode(GPS_Serial.read());
   }
 
   if (!gps.location.isValid()) {
+    // GPS location is not valid yet - no fix
+
     if (gps.satellites.isValid()) {
-      Serial.print("Searching for GPS fix... Satellites in view: ");
-      Serial.println(gps.satellites.value());
+      // Receiving satellite data but not enough for a fix
+      gpsSignal = true;
+      gpsHasFix = false;
+      gpsStatus = "[..] Locking"; // Acquiring Fix
+      gpsSatellites = gps.satellites.value();
+
     } else {
-      Serial.println("Waiting for satellite data...");
+      // No satellite data yet (cold start)
+      gpsSignal = false;
+      gpsHasFix = false;
+      gpsStatus = "[--] Searching"; // Acquiring Signal
     }
   } else if (gps.location.isUpdated()) {
-    Serial.print("✅ GPS Fix Acquired!\nLat: ");
-    Serial.print(gps.location.lat(), 6);
-    Serial.print("  Lon: ");
-    Serial.println(gps.location.lng(), 6);
-
-    Serial.print("Satellites used: ");
-    Serial.println(gps.satellites.value());
+    // Valid and updated GPS fix
+    gpsStatus = "[OK] GPS Locked"; // GPS ACQUIRED
+    gpsSignal = true;
+    gpsHasFix = true;
+    gpsLatitude = gps.location.lat();
+    gpsLongitude = gps.location.lng();
+    gpsSatellites = gps.satellites.value();
 
     if (gps.altitude.isValid()) {
-      Serial.print("Altitude (m): ");
-      Serial.println(gps.altitude.meters());
+      // Altitude data is available valid
+      gpsAltitude = gps.altitude.meters();
     }
+  } else {
+    // Lost GPS signal
+    gpsSignal = true;
+    gpsHasFix = false;
+    gpsStatus = "[!!] Reacquiring"; // Reqcquiring Signal
+    gpsSatellites = 0;
   }
-  */
+  
   // Gyro
   gyro.accelUpdate();
   gyro.gyroUpdate();
@@ -425,8 +463,8 @@ void loop() {
   drawPitchLadders(currentPitch, currentRoll, TFT_LIGHTGREY);
   drawCrosshair(currentRoll, TFT_GREEN);
   drawCompassSlider(currentHeading);
+  drawGPSData();
   hudSprite.pushSprite(0, 0);
-
 
   //delay(50);
 }
