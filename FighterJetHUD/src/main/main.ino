@@ -30,11 +30,6 @@ HardwareSerial GPS_Serial(2);  // UART2
 // Gyro
 MPU9250_asukiaaa gyro;
 const char* cardinalMap[360] {nullptr}; // Cardinal directions for compass
-cardinalMap[0] = "N";   cardinalMap[45] = "NE";  cardinalMap[90] = "E";
-cardinalMap[135] = "SE";cardinalMap[180] = "S";  cardinalMap[225] = "SW";
-cardinalMap[270] = "W"; cardinalMap[315] = "NW";
-
-
 
 // Buffered Sensor Data
 float currentRoll = 0.0;
@@ -170,9 +165,9 @@ void drawCompassSlider(float heading) {
   int spacing = 12;
   int tickInterval = 5;
   int labelInterval = 15;
-  int yPos = 20;
+  int yPos = 10;
   int baseLineY = yPos + 10;
-  int tickHeight = 8;
+  int tickHeight = 5;
 
   int edgePadding = 10;
   int leftLimit = edgePadding;
@@ -193,21 +188,21 @@ void drawCompassSlider(float heading) {
   // Cardinal directions map
   hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);
   for(int i=-18; i<=18; i++) {
-    int deg = (centerDeg + i ( tickInterval)) % 360;
+    int deg = (centerDeg + i * tickInterval) % 360;
     if (deg < 0) deg += 360; // Normalize to 0-359
     int x = cx + i * spacing + pixelOffset;
 
     if(x > leftLimit && x < rightLimit) {
       if(deg % labelInterval == 0) {
         // Major Tick
-        hudSprite.drawLine(x, baseLineY - tickheight / 2, x, baseLineY + tickHeight, TFT_GREEN);
+        hudSprite.drawLine(x, baseLineY - tickHeight / 2, x, baseLineY + tickHeight, TFT_GREEN);
         // Labels
         if(cardinalMap[deg]) {
           hudSprite.setCursor(x-3, yPos - 8); // Center-align
           hudSprite.print(cardinalMap[deg]);
         }
         hudSprite.setCursor(x-6, baseLineY + 15);
-        hudSprite.print(String(deg) + "°");
+        hudSprite.print(String(deg));
       } else {
         // Minor Tick
         hudSprite.drawLine(x, baseLineY, x, baseLineY + 4, TFT_GREEN);
@@ -237,7 +232,7 @@ void drawCompassSlider(float heading) {
 void setup() {
 
 
-  delay(2000);
+  delay(500);
   Serial.begin(9600);
 
   Wire.begin(21, 22);  // SDA = 21, SCL = 22
@@ -267,6 +262,10 @@ void setup() {
   hud.println("  SamChenYu");
   hud.println("  Technologies");
 
+  cardinalMap[0] = "N";   cardinalMap[45] = "NE";  cardinalMap[90] = "E";
+  cardinalMap[135] = "SE";cardinalMap[180] = "S";  cardinalMap[225] = "SW";
+  cardinalMap[270] = "W"; cardinalMap[315] = "NW";
+
   // Start sensors
   temp.begin();
   GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // We will override these next line
@@ -292,7 +291,7 @@ void setup() {
     // Draw the filled portion
     hud.fillRect(x + 1, y + 1, filled, h - 2, TFT_GREEN);
 
-    delay(200);
+    delay(100);
   }
 
 
