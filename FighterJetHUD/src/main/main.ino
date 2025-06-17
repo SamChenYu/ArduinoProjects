@@ -29,7 +29,10 @@ TinyGPSPlus gps;
 HardwareSerial GPS_Serial(2);  // UART2
 // Gyro
 MPU9250_asukiaaa gyro;
-
+const char* cardinalMap[360] {nullptr}; // Cardinal directions for compass
+cardinalMap[0] = "N";   cardinalMap[45] = "NE";  cardinalMap[90] = "E";
+cardinalMap[135] = "SE";cardinalMap[180] = "S";  cardinalMap[225] = "SW";
+cardinalMap[270] = "W"; cardinalMap[315] = "NW";
 
 
 
@@ -54,58 +57,25 @@ void initStaticHud() {
   int arc_radius = 30; // Radius of the outer circle
   int tick_len = 5;
   int tick_spacing_deg = 15;
-
   // === Full Circle ===
   staticHud.drawCircle(cx, cy, arc_radius, color);
-
   // === Arc Tick Marks — Top and Bottom semicircles ===
   for (int angle = 0; angle <= 360; angle += tick_spacing_deg) {
     float rad = radians(angle);
-
     // Outer tick position on circle
     float x_outer = cx + arc_radius * cos(rad);
     float y_outer = cy + arc_radius * sin(rad);
-
     // Vector from tick to center
     float dx = cx - x_outer;
     float dy = cy - y_outer;
     float dist = sqrt(dx * dx + dy * dy);
-
     // Normalize and scale to tick length
     float x_inner = x_outer + (dx / dist) * tick_len;
     float y_inner = y_outer + (dy / dist) * tick_len;
-
     // Draw tick mark
     staticHud.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
   }
 
-  // === Bar Labels for Temp / G Force ===
-  int barHeight = 100;
-  int barTop = cy - barHeight / 2;
-  int tempBarX = 40;
-  tft.setTextSize(1);
-  tft.setTextColor(TFT_GRAY, TFT_BLACK);
-  // Temperature bar ticks and labels (Left side)
-  for(int i=0; i<6; i++) {
-    int value = 20 + i * 2;
-    int y = barTop + barHeight - (i * barHeight) / 5;
-    // Tick
-    staticHud.drawLine(tempBarX - 3, y, tempBarX, y, TFT_GRAY);
-    // Label
-    staticHud.setCursor(tempBarX - 25, y - 3);
-    staticHud.print(String(value) + "°");
-  }
-
-  int gBarX = 128 - 40; // Right side
-  float gMin = -0.5;
-  float gMax = 2.0;
-  for(int i=0; i<10; i++) {
-    float value = gMin + (i * (gMax - gMin) / steps);
-    int y = barTop + barHeight - (i * barHeight) / 10;
-    staticHud.drawLine(gBarX + 5, y, gBarX + 8, y, TFT_GRAY);
-    staticHud.setCursor(gBarX + 10, y - 3);
-    staticHud.print(String(value, 1));
-  }
 
 
 
@@ -154,7 +124,6 @@ void drawCrosshair(float rollDeg, uint16_t color) {
   }
 }
 
-
 void drawPitchLadders(float pitch, float roll, uint16_t color) {
 
   int cx = hudSprite.width() / 2;
@@ -194,7 +163,72 @@ void drawPitchLadders(float pitch, float roll, uint16_t color) {
   }
 }
 
+void drawCompassSlider(float heading) {
+  int cx = hudSprite.width() / 2;
+  int canvasWidth = 128;
 
+  int spacing = 12;
+  int tickInterval = 5;
+  int labelInterval = 15;
+  int yPos = 20;
+  int baseLineY = yPos + 10;
+  int tickHeight = 8;
+
+  int edgePadding = 10;
+  int leftLimit = edgePadding;
+  int rightLimit = canvasWidth - edgePadding;
+
+  hudSprite.fillRect(0, yPos - 15, canvasWidth, 40, TFT_BLACK); // Clear previous area
+  // Compass baseline
+  hudSprite.drawLine(leftLimit, baseLineY, rightLimit, baseLineY, TFT_GREEN);
+  // End Caps
+  hudSprite.drawLine(leftLimit, baseLineY - 5, leftLimit, baseLineY + 15, TFT_GREEN);
+  hudSprite.drawLine(rightLimit, baseLineY - 5, rightLimit, baseLineY + 15, TFT_GREEN);
+  // Degree and alignment Logic
+  int headingStep = int(heading) / tickInterval;
+  float offsetWithinStep = (int(heading) % tickInterval) / (float) tickInterval;
+  float pixelOffset = offsetWithinStep * spacing;
+  int centerDeg = headingStep * tickInterval;
+
+  // Cardinal directions map
+  hudSprite.setTextColor(TFT_GREEN, TFT_BLACK);
+  for(int i=-18; i<=18; i++) {
+    int deg = (centerDeg + i ( tickInterval)) % 360;
+    if (deg < 0) deg += 360; // Normalize to 0-359
+    int x = cx + i * spacing + pixelOffset;
+
+    if(x > leftLimit && x < rightLimit) {
+      if(deg % labelInterval == 0) {
+        // Major Tick
+        hudSprite.drawLine(x, baseLineY - tickheight / 2, x, baseLineY + tickHeight, TFT_GREEN);
+        // Labels
+        if(cardinalMap[deg]) {
+          hudSprite.setCursor(x-3, yPos - 8); // Center-align
+          hudSprite.print(cardinalMap[deg]);
+        }
+        hudSprite.setCursor(x-6, baseLineY + 15);
+        hudSprite.print(String(deg) + "°");
+      } else {
+        // Minor Tick
+        hudSprite.drawLine(x, baseLineY, x, baseLineY + 4, TFT_GREEN);
+      }
+    }
+  }
+  
+  // Compas Pointer
+  int pointerY = baseLineY + 18;
+  hudSprite.fillTriangle(
+    cx - 6, pointerY + 10,
+    cx + 6, pointerY + 10,
+    cx, pointerY, TFT_GREEN
+  );
+  hudSprite.drawTriangle(
+    cx - 6, pointerY + 10,
+    cx + 6, pointerY + 10,
+    cx, pointerY, TFT_BLACK
+  );
+
+}
 
 
 
@@ -326,7 +360,6 @@ void loop() {
   Serial.print("G-force: "); Serial.println(gforce);
 
   // Gyro
-
   float accX = gyro.accelX();
   float accY = gyro.accelY();
   float accZ = gyro.accelZ();
@@ -335,13 +368,13 @@ void loop() {
   Serial.print(" Z: "); Serial.println(accZ);
   
   currentRoll = atan2(accY, accZ) * 180.0 / PI;
-
   currentPitch = atan2(-accX, sqrt(accY * accY + accZ * accZ)) * 180.0 / PI;
 
 
   hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
   drawPitchLadders(currentPitch, currentRoll, TFT_LIGHTGREY);
   drawCrosshair(currentRoll, TFT_GREEN);
+  drawCompassSlider(heading);
   hudSprite.pushSprite(0, 0);
 
 
