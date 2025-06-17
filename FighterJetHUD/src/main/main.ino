@@ -32,8 +32,8 @@ const char* cardinalMap[360] {nullptr}; // Cardinal directions for compass
 
 // Buffered Sensor Data
 float currentRoll = 0.0; const float rollNoiseThreshold = 0.1;
-float currentPitch = 0.0; const float pitchNoiseThreshold = 3.0;
-float currentHeading = 0.0; const float headingNoiseThreshold = 0.5;
+float currentPitch = 0.0; const float pitchNoiseThreshold = 2.0;
+float currentHeading = 0.0; const float headingNoiseThreshold = 0.8;
 float gForce = 0.0;
 
 float ambientTemp = 0.0;
@@ -265,7 +265,13 @@ void drawTemperatureBar(float ambient, float object) {
 
   // Ambient Temperature Bar -> Between 10 degrees to 40 degrees
   int ambientY = barTop + (1.0 - constrain((ambient - 10.0) / 30.0, 0.0, 1.0)) * barHeight;
-  hudSprite.fillRect(tempBarX - 4, ambientY, 6, barHeight - (ambientY - barTop), TFT_RED);
+  
+  if(ambient > 25.0) {
+    hudSprite.fillRect(tempBarX - 4, ambientY, 6, barHeight - (ambientY - barTop), TFT_RED);
+  } else {
+    hudSprite.fillRect(tempBarX - 4, ambientY, 6, barHeight - (ambientY - barTop), TFT_GREEN);
+  }
+  
   
   hudSprite.drawString(String(ambient, 1), 0, 140);
   hudSprite.drawString(String(object, 1), 0, 150);
@@ -279,7 +285,14 @@ void drawGForceBar(float gForce) {
 
   // G-force Bar
   int gY = barTop + (int)((1.0 - (gForce + 0.5) / 2.5) * barHeight);
-  hudSprite.fillRect(gBarX + 9, gY, 5, barHeight - (gY - barTop), TFT_YELLOW);
+
+  if(gForce > 1.0) {
+    hudSprite.fillRect(gBarX + 9, gY, 5, barHeight - (gY - barTop), TFT_BLUE);
+  } else {
+    hudSprite.fillRect(gBarX + 9, gY, 5, barHeight - (gY - barTop), TFT_GREEN);
+  }
+
+  
   hudSprite.drawString(String(gForce, 1), gBarX-5, 140);
 }
 
