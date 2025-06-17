@@ -79,6 +79,36 @@ void initStaticHud() {
     staticHud.drawLine((int)x_outer, (int)y_outer, (int)x_inner, (int)y_inner, color);
   }
 
+  // === Bar Labels for Temp / G Force ===
+  int barHeight = 100;
+  int barTop = cy - barHeight / 2;
+  int tempBarX = 40;
+  tft.setTextSize(1);
+  tft.setTextColor(TFT_GRAY, TFT_BLACK);
+  // Temperature bar ticks and labels (Left side)
+  for(int i=0; i<6; i++) {
+    int value = 20 + i * 2;
+    int y = barTop + barHeight - (i * barHeight) / 5;
+    // Tick
+    staticHud.drawLine(tempBarX - 3, y, tempBarX, y, TFT_GRAY);
+    // Label
+    staticHud.setCursor(tempBarX - 25, y - 3);
+    staticHud.print(String(value) + "°");
+  }
+
+  int gBarX = 128 - 40; // Right side
+  float gMin = -0.5;
+  float gMax = 2.0;
+  for(int i=0; i<10; i++) {
+    float value = gMin + (i * (gMax - gMin) / steps);
+    int y = barTop + barHeight - (i * barHeight) / 10;
+    staticHud.drawLine(gBarX + 5, y, gBarX + 8, y, TFT_GRAY);
+    staticHud.setCursor(gBarX + 10, y - 3);
+    staticHud.print(String(value, 1));
+  }
+
+
+
 }
 
 void rotatePoint(float x, float y, float angleRad, float &outX, float &outY) {
