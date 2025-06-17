@@ -32,8 +32,9 @@ MPU9250_asukiaaa gyro;
 const char* cardinalMap[360] {nullptr}; // Cardinal directions for compass
 
 // Buffered Sensor Data
-float currentRoll = 0.0;
-float currentPitch = 0.0;
+float currentRoll = 0.0; const float rollNoiseThreshold = 0.1;
+float currentPitch = 0.0; const float pitchNoiseThreshold = 1.0;
+float currentHeading = 0.0; const float headingNoiseThreshold = 0.3;
 float gForce = 0.0;
 
 float ambientTemp = 0.0;
@@ -79,15 +80,15 @@ void initStaticHud() {
   // === Bar Labels for Temp / G Force ===
   int barHeight = 100;
   int barTop = cy - barHeight / 2;
-  int tempBarX = 15; // Left Side
+  int tempBarX = 0; // Left Side
   staticHud.setTextSize(1);
   staticHud.setTextColor(TFT_LIGHTGREY, TFT_BLACK);
   // Temperature bar ticks and labels (Left side)
-  for(int i=0; i<6; i++) {
+  for(int i=0; i<10; i++) {
     int value = 20 + i * 2;
-    int y = barTop + barHeight - (i * barHeight) / 5;
+    int y = barTop + barHeight - (i * barHeight) / 10;
     // Tick
-    staticHud.drawLine(tempBarX - 3, y, tempBarX, y, TFT_LIGHTGREY);
+    staticHud.drawLine(tempBarX, y, tempBarX + 5, y, TFT_LIGHTGREY);
   }
 
   int gBarX = 128 - tempBarX; // Right side
@@ -96,7 +97,7 @@ void initStaticHud() {
   for(int i=0; i<10; i++) {
     float value = gMin + (i * (gMax - gMin) / 10);
     int y = barTop + barHeight - (i * barHeight) / 10;
-    staticHud.drawLine(gBarX + 5, y, gBarX + 8, y, TFT_LIGHTGREY);
+    staticHud.drawLine(gBarX, y, gBarX - 5, y, TFT_LIGHTGREY);
   }
 
 
@@ -254,21 +255,16 @@ void drawCompassSlider(float heading) {
 void drawTemperatureBar(float ambient, float object) {
   int barHeight = 100;
   int barTop = hudSprite.height() / 2 - barHeight / 2;
-  int tempBarX = 15; // Left Side
+  int tempBarX = 5; // Left Side
   int gBarX = hudSprite.width() - tempBarX; // Right side
 
-  // Clear previous bars
-  hudSprite.fillRect(tempBarX - 5, barTop, 50, barHeight, TFT_BLACK);
-  hudSprite.fillRect(gBarX + 5, barTop, 50, barHeight, TFT_BLACK);
-
-  // Ambient Temperature Bar
-  int ambientY = barTop + (int)((1.0 - (ambient - 20) / 10.0) * barHeight);
-  hudSprite.fillRect(tempBarX - 3, ambientY, 6, barHeight - (ambientY - barTop), TFT_RED);
+  // Ambient Temperature Bar -> Between 10 degrees to 40 degrees
+  int ambientY = barTop + (1.0 - constrain((ambient - 10.0) / 30.0, 0.0, 1.0)) * barHeight;
+  hudSprite.fillRect(tempBarX - 4, ambientY, 6, barHeight - (ambientY - barTop), TFT_RED);
   
-  // Object Temperature Bar
-  int objectY = barTop + (int)((1.0 - (object - 20) / 10.0) * barHeight);
-  hudSprite.fillRect(gBarX + 6, objectY, 6, barHeight - (objectY - barTop), TFT_BLUE);
-
+  hudSprite.drawString(String(ambient, 1), 0, 140);
+  hudSprite.drawString(String(object, 1), 0, 150);
+  
 }
 
 void drawGForceBar(float gForce) {
@@ -276,12 +272,10 @@ void drawGForceBar(float gForce) {
   int barTop = hudSprite.height() / 2 - barHeight / 2;
   int gBarX = hudSprite.width() - 15; // Right side
 
-  // Clear previous bar
-  hudSprite.fillRect(gBarX + 5, barTop, 50, barHeight, TFT_BLACK);
-
   // G-force Bar
   int gY = barTop + (int)((1.0 - (gForce + 0.5) / 2.5) * barHeight);
-  hudSprite.fillRect(gBarX + 6, gY, 6, barHeight - (gY - barTop), TFT_YELLOW);
+  hudSprite.fillRect(gBarX + 9, gY, 5, barHeight - (gY - barTop), TFT_YELLOW);
+  hudSprite.drawString(String(gForce, 1), gBarX-5, 140);
 }
 
 
@@ -398,10 +392,11 @@ void loop() {
   gyro.magUpdate();
 
   // Heading from magnetometer
-  float heading = atan2(gyro.magX(), gyro.magY()) * 180 / PI;
-  if (heading < 0) {
-    heading += 360;
+  float newHeading = atan2(gyro.magX(), gyro.magY()) * 180 / PI;
+  if (newHeading < 0) {
+    newHeading += 360;
   }
+  if( abs(newHeading - currentHeading) > headingNoiseThreshold ) currentHeading = newHeading;
   //Serial.print("Heading: "); Serial.print(heading); Serial.println("°");
   // G-force
   gForce = sqrt(
@@ -418,16 +413,18 @@ void loop() {
   //Serial.print(" Y: "); Serial.print(accY);
   //Serial.print(" Z: "); Serial.println(accZ);
   
-  currentRoll = atan2(accY, accZ) * 180.0 / PI;
-  currentPitch = atan2(-accX, sqrt(accY * accY + accZ * accZ)) * 180.0 / PI;
+  float newRoll = atan2(accY, accZ) * 180.0 / PI;
+  if(abs(newRoll - currentRoll) > rollNoiseThreshold) currentRoll = newRoll;
+  float newPitch = atan2(-accX, sqrt(accY * accY + accZ * accZ)) * 180.0 / PI;
+  if(abs(newPitch - currentPitch) > pitchNoiseThreshold + 0.1) currentPitch = newPitch;
 
   // === Draw HUD ===
   hudSprite.pushImage(0,0,128,160, (uint16_t*) staticHud.getPointer()); // Clone the base
-  drawPitchLadders(currentPitch, currentRoll, TFT_LIGHTGREY);
-  drawCrosshair(currentRoll, TFT_GREEN);
-  drawCompassSlider(heading);
   drawTemperatureBar(ambientTemp, objectTemp);
   drawGForceBar(gForce);
+  drawPitchLadders(currentPitch, currentRoll, TFT_LIGHTGREY);
+  drawCrosshair(currentRoll, TFT_GREEN);
+  drawCompassSlider(currentHeading);
   hudSprite.pushSprite(0, 0);
 
 
