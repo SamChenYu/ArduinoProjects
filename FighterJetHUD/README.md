@@ -2,6 +2,21 @@
 
 Building a Fighter Jet Style HUD Attachment For My Mountain Bike
 
+<img width="1118" alt="pcb" src="https://github.com/user-attachments/assets/a219efe6-fb62-463f-be7a-58d3aea8bd10" />
+
+## HUD Specifications
+- Orientation: Gyroscope-based Artificial Horizon, Pitch Ladders, and Compass Heading
+- Temperature: Real-time Ambient and Object Readings
+- Acceleration: G-force Measurement
+- GPS: Latitude / Longitude, Altitude and Satellite Count
+
+
+https://github.com/user-attachments/assets/80f926de-409b-4d04-a4e0-312d349b4325
+
+
+
+
+
 ## Sensor Specifications  
 - Infrared Temperature Sensor MLX90614  
 - 9DOF 9-Axis Accelerometer Gyroscope Magnetic Field Sensor MPU-9250
