@@ -8,11 +8,6 @@
 #include <TinyGPSPlus.h> // GPS
 #include <MPU9250_asukiaaa.h> // Gyroscope
 
-// LCD PINS
-#define TFT_CS     5
-#define TFT_RST    4
-#define TFT_DC     2
-
 #define HUD_W 128
 #define HUD_H 160
 
@@ -50,15 +45,13 @@ int gpsSatellites = 0;
 void initStaticHud() {
   staticHud.fillSprite(TFT_BLACK);
 
-  // === Sizes === (Refer to drawCrosshair for more details)
+  // === Crosshair Sizes === (Refer to drawCrosshair for more details)
   int cx = staticHud.width() / 2;
   int cy = staticHud.height() / 2;
   int r = 5;
   int color = TFT_GREEN;
-
   // === Central Ring ===
   staticHud.drawCircle(cx, cy, r, color);
-
   // Draw the outer circle and ticks
   int arc_radius = 30; // Radius of the outer circle
   int tick_len = 5;
@@ -95,7 +88,6 @@ void initStaticHud() {
     // Tick
     staticHud.drawLine(tempBarX, y, tempBarX + 5, y, TFT_LIGHTGREY);
   }
-
   int gBarX = 128 - tempBarX; // Right side
   float gMin = -0.5;
   float gMax = 2.0;
@@ -109,6 +101,7 @@ void initStaticHud() {
 }
 
 void rotatePoint(float x, float y, float angleRad, float &outX, float &outY) {
+  // Used for crosshair and pitch ladders
   outX = x * cos(angleRad) - y * sin(angleRad);
   outY = x * sin(angleRad) + y * cos(angleRad);
 }
@@ -121,18 +114,16 @@ void drawCrosshair(float rollDeg, uint16_t color) {
   int r = 5;
   int tailLen = 20;
   int shortTail = 12;
-
   float rollRad = radians(rollDeg);
 
   // === Horizontal Tails (rotated with roll) ===
   for (int i = 0; i < 2; i++) {
     int sign = (i == 0) ? -1 : 1;
     float dx = sign * (r + tailLen);
-    
+
     float x0, y0, x1, y1;
     rotatePoint(dx, 0, rollRad, x0, y0);
     rotatePoint(dx + sign * tailLen, 0, rollRad, x1, y1);
-
     hudSprite.drawLine(cx + x0, cy + y0, cx + x1, cy + y1, color);
   }
 
@@ -309,9 +300,12 @@ void drawGPSData() {
   } else if(gpsSignal) {
     // Signal but no fix
     hudSprite.drawString(gpsStatus, 25 , 130);
+    hudSprite.drawString(String(gpsSatellites), hudSprite.width() / 2, 140);
   } else {
     // No signal
     hudSprite.drawString(gpsStatus, 25, 130);
+    hudSprite.drawString(String(gpsSatellites), hudSprite.width() / 2, 140);
+
   }
 }
 
@@ -433,8 +427,8 @@ void loop() {
     // Lost GPS signal
     gpsSignal = true;
     gpsHasFix = false;
-    gpsStatus = "[!!] Reacquiring"; // Reqcquiring Signal
-    gpsSatellites = 0;
+    gpsStatus = "[!!] Reacquiring"; // Reacquiring Signal
+    gpsSatellites = 0;    
   }
   
   // Gyro
@@ -479,5 +473,4 @@ void loop() {
   drawGPSData();
   hudSprite.pushSprite(0, 0);
 
-  //delay(50);
 }

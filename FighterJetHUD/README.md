@@ -15,7 +15,7 @@ Building a Fighter Jet Style HUD Attachment For My Mountain Bike
 - TinyGPSPlus  
 - TFT_eSPI  (User_Setup.h in /src)
 
-## 📡 Sensor & Display Wiring
+## Sensor & Display Wiring
 
 | Component                         | Signal     | ESP32 Pin | Notes                               |
 | --------------------------------- | ---------- | --------- | ----------------------------------- |
