@@ -293,19 +293,16 @@ void drawGPSData() {
   
   if(gpsSignal && gpsHasFix) {
     // Valid data
-    hudSprite.drawString(gpsStatus, 25, 130);
-    hudSprite.drawString("Lat: " + String(gpsLatitude, 6), 20, 150);
-    hudSprite.drawString("Lon: " + String(gpsLongitude, 6), 20, 160);
+    hudSprite.drawString(gpsStatus + ": " + String(gpsSatellites), 20, 130);
+    hudSprite.drawString(String(gpsLatitude, 6), 40, 140);
+    hudSprite.drawString(String(gpsLongitude, 6), 40, 150);
 
   } else if(gpsSignal) {
     // Signal but no fix
-    hudSprite.drawString(gpsStatus, 25 , 130);
-    hudSprite.drawString(String(gpsSatellites), hudSprite.width() / 2, 140);
+    hudSprite.drawString(gpsStatus + ": " + String(gpsSatellites), 20, 130);
   } else {
     // No signal
-    hudSprite.drawString(gpsStatus, 25, 130);
-    hudSprite.drawString(String(gpsSatellites), hudSprite.width() / 2, 140);
-
+    hudSprite.drawString(gpsStatus + ": " + String(gpsSatellites), 20, 130);
   }
 }
 
