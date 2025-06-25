@@ -11,7 +11,11 @@ Building a Fighter Jet Style HUD Attachment For My Mountain Bike
 - GPS: Latitude / Longitude, Altitude and Satellite Count
 
 
-https://github.com/user-attachments/assets/80f926de-409b-4d04-a4e0-312d349b4325
+
+
+
+https://github.com/user-attachments/assets/a5a95695-761b-438c-a6cb-45be1ee388d2
+
 
 
 
